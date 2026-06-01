@@ -1,0 +1,1 @@
+# A-Uniformly-Distributed-CORDIC-Based-RoPE-Hardware-Accelerator-for-LLMs
