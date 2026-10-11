@@ -1,0 +1,51 @@
+
+
+Working Directory = /home/redhatacademy19/Documents/Siddhant/RUN/csd_ud/W=16 STAGES = 5
+QoS Summary for rope_csd_pair
+================================================================================
+Metric                          generic         mapped          opt            
+================================================================================
+Slack (ps):                     1,308           1,060           1,046
+  R2R (ps):                     1,404           1,060           1,046
+  I2R (ps):                     1,308           1,128           1,128
+  R2O (ps):                     1,753           1,767           1,767
+  I2O (ps):                  no_value        no_value        no_value
+  CG  (ps):                  no_value        no_value        no_value
+TNS (ps):                           0               0               0
+  R2R (ps):                         0               0               0
+  I2R (ps):                         0               0               0
+  R2O (ps):                         0               0               0
+  I2O (ps):                  no_value        no_value        no_value
+  CG  (ps):                  no_value        no_value        no_value
+Failing Paths:                      0               0               0
+Cell Area:                     11,246           4,096           4,025
+Total Cell Area:               11,246           4,096           4,025
+Leaf Instances:                 3,699           1,588           1,549
+Total Instances:                3,699           1,588           1,549
+Utilization (%):                 0.00            0.00            0.00
+Tot. Net Length (um):        no_value        no_value        no_value
+Avg. Net Length (um):        no_value        no_value        no_value
+Route Overflow H (%):        no_value        no_value        no_value
+Route Overflow V (%):        no_value        no_value        no_value
+MBCI(%) (bits/gate) :            0.00            0.00            0.00
+Norm Cong Hotspot Area:
+  Max Cong:                  no_value        no_value        no_value
+  Tot Cong:                  no_value        no_value        no_value
+================================================================================
+CPU  Runtime (h:m:s):        00:30:26        00:30:15        00:30:02
+Real Runtime (h:m:s):        00:30:43        00:30:11        00:30:03
+CPU  Elapsed (h:m:s):        00:30:28        00:30:43        00:30:45
+Real Elapsed (h:m:s):        00:30:44        00:30:55        00:30:58
+Memory (MB):                  1513.37         1574.74         1543.74
+================================================================================
+================================================================================
+Flow Settings:
+================================================================================
+Total Runtime (h:m:s): 00:30:58
+Total Memory (MB):     1543.74
+Executable Version:    21.10-p002_1
+================================================================================
+Total Cell Area =  Cell Area + Physical Cell Area
+Total Instances =  Leaf Instances + Physical Instances
+
+
