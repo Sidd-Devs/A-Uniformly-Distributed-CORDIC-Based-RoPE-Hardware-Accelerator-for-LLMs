@@ -1,0 +1,51 @@
+
+
+Working Directory = /home/redhatacademy19/Documents/Siddhant/RUN/mult_rope/W=14
+QoS Summary for rope_mult_pair
+================================================================================
+Metric                          generic        
+================================================================================
+Slack (ps):                     1,107
+  R2R (ps):                  no_value
+  I2R (ps):                     1,107
+  R2O (ps):                     1,753
+  I2O (ps):                  no_value
+  CG  (ps):                  no_value
+TNS (ps):                           0
+  R2R (ps):                  no_value
+  I2R (ps):                         0
+  R2O (ps):                         0
+  I2O (ps):                  no_value
+  CG  (ps):                  no_value
+Failing Paths:                      0
+Cell Area:                     16,988
+Total Cell Area:               16,988
+Leaf Instances:                 6,283
+Total Instances:                6,283
+Utilization (%):                 0.00
+Tot. Net Length (um):        no_value
+Avg. Net Length (um):        no_value
+Route Overflow H (%):        no_value
+Route Overflow V (%):        no_value
+MBCI(%) (bits/gate) :            0.00
+Norm Cong Hotspot Area:
+  Max Cong:                  no_value
+  Tot Cong:                  no_value
+================================================================================
+CPU  Runtime (h:m:s):        00:30:15
+Real Runtime (h:m:s):        00:30:58
+CPU  Elapsed (h:m:s):        00:30:17
+Real Elapsed (h:m:s):        00:30:59
+Memory (MB):                  1534.79
+================================================================================
+================================================================================
+Flow Settings:
+================================================================================
+Total Runtime (h:m:s): 00:30:58
+Total Memory (MB):     1534.79
+Executable Version:    21.10-p002_1
+================================================================================
+Total Cell Area =  Cell Area + Physical Cell Area
+Total Instances =  Leaf Instances + Physical Instances
+
+

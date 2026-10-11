@@ -1,0 +1,51 @@
+
+
+Working Directory = /home/redhatacademy19/Documents/Siddhant/RUN/standard_cordic/STAGES = 12
+QoS Summary for rope_cordic_pair
+================================================================================
+Metric                          generic         mapped          opt            
+================================================================================
+Slack (ps):                     1,506           1,360           1,360
+  R2R (ps):                     1,659           1,556           1,556
+  I2R (ps):                     1,506           1,360           1,360
+  R2O (ps):                     1,753           1,766           1,766
+  I2O (ps):                  no_value        no_value        no_value
+  CG  (ps):                  no_value        no_value        no_value
+TNS (ps):                           0               0               0
+  R2R (ps):                         0               0               0
+  I2R (ps):                         0               0               0
+  R2O (ps):                         0               0               0
+  I2O (ps):                  no_value        no_value        no_value
+  CG  (ps):                  no_value        no_value        no_value
+Failing Paths:                      0               0               0
+Cell Area:                      9,067           3,819           3,813
+Total Cell Area:                9,067           3,819           3,813
+Leaf Instances:                 2,708           1,502           1,497
+Total Instances:                2,708           1,502           1,497
+Utilization (%):                 0.00            0.00            0.00
+Tot. Net Length (um):        no_value        no_value        no_value
+Avg. Net Length (um):        no_value        no_value        no_value
+Route Overflow H (%):        no_value        no_value        no_value
+Route Overflow V (%):        no_value        no_value        no_value
+MBCI(%) (bits/gate) :            0.00            0.00            0.00
+Norm Cong Hotspot Area:
+  Max Cong:                  no_value        no_value        no_value
+  Tot Cong:                  no_value        no_value        no_value
+================================================================================
+CPU  Runtime (h:m:s):        00:30:18        00:30:08        00:30:02
+Real Runtime (h:m:s):        00:32:01        00:30:05        00:30:03
+CPU  Elapsed (h:m:s):        00:30:20        00:30:28        00:30:30
+Real Elapsed (h:m:s):        00:32:02        00:32:07        00:32:10
+Memory (MB):                  1483.80         1550.84         1517.83
+================================================================================
+================================================================================
+Flow Settings:
+================================================================================
+Total Runtime (h:m:s): 00:32:10
+Total Memory (MB):     1517.83
+Executable Version:    21.10-p002_1
+================================================================================
+Total Cell Area =  Cell Area + Physical Cell Area
+Total Instances =  Leaf Instances + Physical Instances
+
+

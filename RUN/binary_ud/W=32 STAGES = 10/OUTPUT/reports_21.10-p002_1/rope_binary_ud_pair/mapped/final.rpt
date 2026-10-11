@@ -1,0 +1,51 @@
+
+
+Working Directory = /home/redhatacademy19/Documents/Siddhant/RUN/binary_ud/W=32
+QoS Summary for rope_binary_ud_pair
+================================================================================
+Metric                          generic         mapped         
+================================================================================
+Slack (ps):                     1,311             697
+  R2R (ps):                     1,311             697
+  I2R (ps):                     1,777           1,578
+  R2O (ps):                     1,753           1,766
+  I2O (ps):                  no_value        no_value
+  CG  (ps):                  no_value        no_value
+TNS (ps):                           0               0
+  R2R (ps):                         0               0
+  I2R (ps):                         0               0
+  R2O (ps):                         0               0
+  I2O (ps):                  no_value        no_value
+  CG  (ps):                  no_value        no_value
+Failing Paths:                      0               0
+Cell Area:                     26,962           9,877
+Total Cell Area:               26,962           9,877
+Leaf Instances:                 8,185           2,733
+Total Instances:                8,185           2,733
+Utilization (%):                 0.00            0.00
+Tot. Net Length (um):        no_value        no_value
+Avg. Net Length (um):        no_value        no_value
+Route Overflow H (%):        no_value        no_value
+Route Overflow V (%):        no_value        no_value
+MBCI(%) (bits/gate) :            0.00            0.00
+Norm Cong Hotspot Area:
+  Max Cong:                  no_value        no_value
+  Tot Cong:                  no_value        no_value
+================================================================================
+CPU  Runtime (h:m:s):        00:30:25        00:30:23
+Real Runtime (h:m:s):        00:30:31        00:30:16
+CPU  Elapsed (h:m:s):        00:30:27        00:30:50
+Real Elapsed (h:m:s):        00:30:32        00:30:48
+Memory (MB):                  1538.10         1603.34
+================================================================================
+================================================================================
+Flow Settings:
+================================================================================
+Total Runtime (h:m:s): 00:30:47
+Total Memory (MB):     1611.34
+Executable Version:    21.10-p002_1
+================================================================================
+Total Cell Area =  Cell Area + Physical Cell Area
+Total Instances =  Leaf Instances + Physical Instances
+
+
