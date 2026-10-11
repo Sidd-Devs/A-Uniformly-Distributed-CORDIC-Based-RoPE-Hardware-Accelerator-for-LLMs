@@ -1,0 +1,107 @@
+% T4.1 / R1-2 — top-level architectural block diagram for Section III.
+% Reviewer 1: "A top level architectural block diagram in section III is
+% highly desirable."
+%
+% REQUIRES in the preamble:
+%   \usepackage{tikz}
+%   \usetikzlibrary{positioning,fit,arrows.meta,backgrounds}
+%
+% NOT COMPILED — no LaTeX on the authoring machine. Compile once and adjust
+% the two column x-offsets (0 and 4.6) if it overflows \columnwidth.
+% If it will not fit one column, promote to figure* and widen to ~7cm columns.
+%
+% What the figure has to communicate, in priority order:
+%   1. The angle front-end is amortised -- but NOT across lanes. theta_i =
+%      m*Theta_i depends on i, so each lane needs its own angle. What it does
+%      not depend on is the DATA, so the digit string for (m,i) is reused
+%      across every head, layer and batch element: 32x32 = 1024x for
+%      LLaMA-2-7B. This is contribution C2 and it is also what makes the
+%      comparison against the multiplier baseline fair (T2.1) --
+%      rope_mult_pair consumes sin/cos it never pays to produce.
+%   2. There is no Z-path. The digit string is combinational from theta.
+%   3. Normalisation is a functional requirement, not an optimisation (S-14):
+%      measured |q|=132, |k|=178 against a Q1.F range of [-2,2).
+%   4. The CORDIC gain leaves the datapath entirely -- K^2 folds into the
+%      attention scale at zero cost (C1). Drawn dashed to mark "no hardware".
+%
+% ASCII intent, in case the TikZ needs re-drawing:
+%
+%      position m ---> [ Theta_i ROM / phase acc ] ---> theta
+%                              |
+%                      [ range reduce  mod 2pi ]
+%                        |                 |
+%                   quadrant q        theta_res (+-45deg)
+%                        |                 |
+%                        |         [ angle encoder ]  <-- no Z-path
+%                        |                 | N digits
+%   q,k pairs -> [ BFP normalise ] -> [ rotator lane x d/2 ]
+%                        | exp e            |
+%                        |          [ quadrant fix-up ]  (swap/negate, wires)
+%                        +--------> [ denormalise ]
+%                                          |
+%                                    to QK^T  (scale K^2/sqrt(d_h))
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  box/.style   = {draw, rounded corners=1pt, align=center,
+                  minimum height=6.5mm, inner xsep=2pt},
+  wide/.style  = {box, text width=26mm},
+  narrow/.style= {box, text width=22mm},
+  free/.style  = {box, densely dashed, text width=26mm},
+  ar/.style    = {-{Latex[length=1.4mm]}, thick},
+  lbl/.style   = {font=\tiny, inner sep=1pt}
+]
+
+% ---------------- angle front-end (left column) ----------------
+\node[wide] (theta)  at (0,0)      {$\Theta_i$ table\\[-1pt]\tiny$\theta=m\Theta_i$};
+\node[wide] (rr)     at (0,-1.15)  {range reduce\\[-1pt]\tiny$\bmod 2\pi$, quadrant fold};
+\node[wide] (enc)    at (0,-2.45)  {angle encoder\\[-1pt]\tiny combinational, no Z-path};
+
+\draw[ar] (theta) -- (rr);
+\draw[ar] (rr)    -- (enc);
+
+% shared front-end annotation
+\begin{scope}[on background layer]
+  \node[draw, dotted, rounded corners=2pt, inner sep=3pt,
+        fit=(theta)(enc)] (fe) {};
+\end{scope}
+\node[lbl, anchor=north, align=center] at (fe.south)
+      {computed once per $(m,i)$;\\[-1pt]reused across heads, layers, batch};
+
+% ---------------- datapath (right column) ----------------
+\node[wide] (bfp)  at (4.6,-1.15) {BFP normalise\\[-1pt]\tiny shared exponent, barrel shift};
+\node[wide] (rot)  at (4.6,-2.45) {rotator lane $\times\,d/2$\\[-1pt]\tiny $N$ shift-add stages};
+\node[wide] (quad) at (4.6,-3.60) {quadrant fix-up\\[-1pt]\tiny swap / negate, wires only};
+\node[wide] (den)  at (4.6,-4.75) {denormalise\\[-1pt]\tiny restore exponent};
+
+\node[narrow] (qk) at (4.6,0) {$\mathbf{q},\mathbf{k}$ pairs\\[-1pt]\tiny$(x_{2i},x_{2i+1})$};
+
+\draw[ar] (qk)  -- (bfp);
+\draw[ar] (bfp) -- (rot);
+\draw[ar] (rot) -- (quad);
+\draw[ar] (quad)-- (den);
+
+% cross links
+\draw[ar] (enc.east) -- node[lbl,above]{$N$ digits} (rot.west);
+\draw[ar] (rr.east)  -- ++(0.55,0) |- node[lbl,pos=0.75,above]{quadrant} (quad.west);
+\draw[ar] (bfp.east) -- ++(0.45,0) |- node[lbl,pos=0.75,above]{exp} (den.east);
+
+% ---------------- gain fold (free) ----------------
+\node[free] (gain) at (4.6,-6.0) {attention scale\\[-1pt]\tiny$K^{2}/\sqrt{d_h}$ --- no hardware};
+\draw[ar,densely dashed] (den) -- (gain);
+
+\end{tikzpicture}
+\caption{Top-level RoPE accelerator. The angle front-end (dotted) depends only
+on the token position and the dimension index, never on the data, so each
+$(m,i)$ digit string is computed once and reused across every attention head,
+layer and batch element --- $32\times32$ reuses for a LLaMA-2-7B-class model. The digit string is produced
+combinationally from $\theta$, so no Z-path is required. Normalisation is
+functional rather than optional: measured query and key activations reach
+$|q|=132$ and $|k|=178$ against the $[-2,2)$ range of the $Q1.F$ datapath.
+The CORDIC scale factor never appears in the datapath at all --- for the
+Binary UD variant $K$ is angle-independent, so $K^2$ folds into the attention
+scaling (dashed) at no cost.}
+\label{fig:arch}
+\end{figure}

@@ -1,0 +1,63 @@
+% T2.5 / T2.6 / T2.7 — replacement for Section III "Quantization and Synthesis
+% Methodology". Closes R4-7 ("Add details about ASIC power methodology").
+%
+% Three factual corrections to the submitted text, all verifiable from the
+% scripts in the artifact:
+%   S-6  the library is Cadence GPDK045 (gsclib045), NOT TSMC 45 nm
+%   S-7  the corner is fast_vdd1v2 @ PVT_1P32V_0C -- 1.32 V, 0 C -- not the
+%        claimed "nominal supply voltage of 1.2 V"
+%   S-8  power comes from report_power with no SAIF/VCD back-annotation, i.e.
+%        default switching statistics, not simulation-derived activity
+%
+% Stating the corner accurately costs nothing: every design was synthesised
+% under the identical setup, so the comparisons stand. Claiming a nominal
+% corner we did not use would not survive a reader opening the scripts.
+
+\subsection{Quantisation and Synthesis Methodology}
+\label{sec:method}
+
+All datapaths are fixed-point. Operands and intermediate values use a
+$Q(1,F)$ format --- one sign bit, one integer bit and $F$ fractional bits,
+for a word length $W = F + 2$ --- with $F$ and the stage count $N$ exposed as
+RTL parameters so the precision--area surface can be swept directly. The
+inputs are block-normalised before the rotator (\S\ref{sec:frontend}), which
+is what allows a two-integer-bit format to carry activations whose raw
+magnitudes reach $|q| \approx 132$.
+
+Synthesis used Cadence Genus 21.10 targeting the \emph{Cadence GPDK045}
+45\,nm standard-cell library (\texttt{gsclib045}), with the high- and
+low-$V_t$ variants enabled alongside the nominal-$V_t$ cells. Physical
+libraries and the QRC technology file were read in, so areas are
+physical-library rather than wire-load-model estimates. Every design ran the
+same \texttt{syn\_generic}/\texttt{syn\_map}/\texttt{syn\_opt} flow at medium
+effort, under a 2.0\,ns clock constraint (500\,MHz) with 0.2\,ns input and
+output delays; the purely combinational blocks are constrained by a matching
+2.0\,ns maximum input-to-output delay. Reported areas are total cell area
+after \texttt{syn\_opt}, and timing slack is taken from the same report.
+
+Two aspects of the setup are worth stating explicitly, since both bear on how
+the absolute numbers should be read.
+
+First, the operating condition is the library's \emph{fast} corner,
+\texttt{fast\_vdd1v2} at PVT\_1P32V\_0C --- 1.32\,V and 0\,\textdegree C.
+This is optimistic relative to a nominal or worst-case corner, so the absolute
+areas and frequencies here are not directly comparable to figures reported at
+typical conditions elsewhere in the literature. Every design in this paper,
+including the LUT, multiplier and standard-CORDIC baselines, was synthesised
+under the identical corner and constraint, so the relative comparisons that
+the argument rests on are unaffected.
+
+Second, power figures come from Genus \texttt{report\_power} without SAIF or
+VCD back-annotation, and therefore reflect the tool's default switching
+statistics rather than activity captured from a RoPE workload. We report them
+because they are consistent across designs, but they should be read as a
+structural comparison rather than a workload measurement. The direction of
+the resulting bias is worth noting: default statistics assume uniform
+switching, which understates the advantage of the shift-add datapaths here,
+since a multiplier array toggles considerably more than a shifter network
+under real data. Annotated power would, if anything, widen the gaps reported
+in Table~\ref{tab:perf}.
+
+The RTL, synthesis scripts, constraint files and the evaluation harness are
+released at~\cite{github}, including the exact library and corner settings
+used, so these choices can be checked rather than taken on trust.

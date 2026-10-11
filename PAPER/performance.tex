@@ -1,0 +1,95 @@
+% T2.2 / R4-8 — Section IV-A, "Latency, Throughput and Energy".
+% Reviewer 4: "Add throughput/latency/energy metrics, not only area and power."
+% Reviewer 2: "report latency ... inside a complete attention pipeline."
+%
+% Derived from the measured synthesis data:
+%   F_max      = 1 / (T_constraint - slack)
+%   throughput = F_max (fully pipelined, one rotation per cycle)
+%   latency    = pipeline depth / F_max
+%   energy/rot = reported power / 500 MHz
+% Reproduce with VERIFY/perf_metrics.py.
+%
+% <<TBD>> : Binary UD at W=14 has no slack figure yet -- synthesis run 12 in
+% SYNTHESIS_RUN_LIST.md. Everything else is measured.
+
+\subsection{Latency, Throughput and Energy}
+\label{sec:perf}
+
+Area and power alone do not settle a comparison between a single-cycle
+multiplier and a deep pipeline. Table~\ref{tab:perf} therefore reports
+throughput, latency and energy per rotation, all derived from the same
+synthesis runs: $F_{\max}$ from the slack against the 2\,ns constraint,
+latency as pipeline depth divided by $F_{\max}$, and energy as the reported
+power at the 500\,MHz operating point.
+
+\begin{table}[t]
+\caption{Performance at two word lengths. $\dagger$ marks a design that
+consumes $\sin/\cos$ it does not generate, and is therefore not a complete
+RoPE unit.}
+\label{tab:perf}
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+Design & Area & Power & Depth & $F_{\max}$ & Latency & Energy \\
+       & ($\mu$m$^2$) & (mW) & (cyc) & (GHz) & (ns) & (pJ/rot) \\
+\midrule
+\multicolumn{7}{l}{\emph{$W=9$ --- the precision the submitted version assumed}} \\
+Multiplier$\dagger$ & 1953 & 0.810 & 1  & 1.094 & 0.91 & \textbf{1.62} \\
+LUT                 & 2339 & 1.770 & 1  & 0.683 & 1.46 & 3.54 \\
+Std.\ CORDIC        & 3292 & 3.062 & 10 & 1.616 & 6.19 & 6.12 \\
+Merged UD ($N{=}5$) & 2330 & 1.117 & 5  & 1.531 & 3.26 & 2.23 \\
+\midrule
+\multicolumn{7}{l}{\emph{$W=14$ --- the precision measured in \S\ref{sec:precision}}} \\
+Multiplier$\dagger$ & 4185 & 2.092 & 1  & 0.714 & 1.40 & 4.18 \\
+LUT                 & 5375 & 4.544 & 1  & 0.507 & 1.97 & 9.09 \\
+Binary UD ($N{=}10$)& 4346 & 2.800 & 10 & <<TBD>> & <<TBD>> & 5.60 \\
+Merged UD ($N{=}5$) & \textbf{3467} & \textbf{1.765} & 5 & \textbf{1.117}
+                    & 4.48 & \textbf{3.53} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The two halves of the table tell opposite stories, and the reason is the
+precision requirement established in \S\ref{sec:precision}. At $W=9$ a plain
+multiplier is the cheapest option on every axis --- smaller, lower latency and
+lowest energy --- and no amount of architectural argument changes that. But
+$W=9$ is not a precision at which these models run: Qwen2-7B has already lost
+$6.4\%$ perplexity there. At the word length the accuracy data actually
+supports, the ordering inverts. Multiplier area grows as $O(W^2)$ while a
+shift-add pipeline grows as $O(WN)$, so by $W=14$ the merged UD datapath is
+$17\%$ smaller than the multiplier, $36\%$ smaller than the LUT, and lowest in
+energy per rotation at $3.53$\,pJ. It is also the only design in that half of
+the table with comfortable timing margin: the LUT closes with $26$\,ps of
+slack at $W=14$ and fails outright at $W=16$.
+
+The latency column is where the pipeline pays. At $W=14$ a rotation takes
+$4.48$\,ns through the merged pipeline against $1.40$\,ns through the
+multiplier. This matters far less than it appears, because RoPE is applied to
+every $(q,k)$ pair independently: the design is throughput-bound, not
+latency-bound, and one rotation is retired per cycle once the pipeline is
+full. At $1.117$\,GHz a single lane sustains $1.12\times10^{9}$ rotations per
+second, and the $d_h/2 = 64$ lanes of one attention head are independent.
+
+\subsubsection{Cost in an attention pipeline}
+A LLaMA-2-7B-class model applies RoPE to $d_h/2 = 64$ pairs, across $32$ heads,
+for both $\mathbf{q}$ and $\mathbf{k}$, in each of $32$ layers --- $131\,072$
+rotations per generated token. At the energies in Table~\ref{tab:perf} that is
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Design & Energy per token \\
+\midrule
+Merged UD ($N{=}5$) & \textbf{463\,nJ} \\
+Multiplier$\dagger$ & 548\,nJ \\
+Binary UD ($N{=}10$)& 734\,nJ \\
+LUT                 & 1191\,nJ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+so the choice of rotation datapath is worth roughly $730$\,nJ per token
+between the best and worst options here --- before accounting for the fact
+that the multiplier row still owes the cost of producing $\sin$ and $\cos$.
