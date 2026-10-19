@@ -32,7 +32,6 @@ RUN/          Genus reports per design and word length
 VERIFY/       Python models, Verilog testbenches and golden vectors
 KAGGLE/       perplexity evaluation on WikiText-2 with a bit-accurate model
               of the synthesised datapath
-PAPER/        LaTeX source
 ```
 
 ## Synthesis runs
