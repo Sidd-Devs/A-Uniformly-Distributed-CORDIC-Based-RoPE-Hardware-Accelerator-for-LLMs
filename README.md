@@ -1,93 +1,110 @@
 # A Uniformly Distributed CORDIC RoPE Accelerator for Large Language Models
 
-Artifact for the ISCAS 2027 submission of the same title. This repository holds the
-RTL, the synthesis scripts, the numerical verification harness, the perplexity
-evaluation, and the raw synthesis reports that every number in the paper is read from.
+RTL, synthesis scripts, numerical verification and perplexity evaluation for a
+multiplier-free rotary position embedding (RoPE) unit built on uniformly
+distributed (UD) CORDIC.
 
-## What the paper claims, and where to check it
+S. Deore, P. Shetty and M. Rao, IIIT Bangalore.
 
-| Claim | Table / section | Files |
+## Results and where to find them
+
+| Result | Paper | Files |
 |---|---|---|
-| Binary UD CORDIC's constant gain `K` folds into attention's `1/sqrt(d_h)` scale for free | §III-C, `tab:gaincomp` | `RTL/binary_ud_cordic_core.v`, `SCRIPTS/rope_gain_comp.tcl`, `RUN/binary_ud/` |
-| Constant gain and radix-4 stage merging are mutually exclusive | §II-B | `VERIFY/csd_verdict.py`, `VERIFY/table1_regen.py` |
-| Fixed-point RoPE saturates on real activations; block floating point is a functional requirement | §III-B, §IV-A | `KAGGLE/rope_hw.py`, `RTL/rope_bfp_norm.v`, `VERIFY/block_granularity.py` |
-| The precision requirement is set by the RoPE base, not model size (`F=11` for Qwen2, `F=8` suffices for LLaMA-2) | §IV-A, `tab:fsweep` | `KAGGLE/eval_perplexity.py`, `KAGGLE/validate_hw.py` |
-| Area, power and energy against standard CORDIC, a sin/cos LUT and a multiplier at `W=12` and `W=14` | §IV-B, `tab:perf` | `SCRIPTS/collect_results.py`; reports pending, see below |
+| Binary UD CORDIC's constant gain `K` folds into attention's `1/sqrt(d_h)` scale at zero cost | Sec. III-C, Table I | `RTL/binary_ud_cordic_core.v`, `RTL/rope_gain_comp.v` |
+| Constant gain and radix-4 stage merging cannot be obtained together | Sec. III-C, Table I | `VERIFY/csd_verdict.py`, `SCRIPTS/gen/run_01..04_*` |
+| Reading micro-rotation directions straight from the binary angle mis-encodes the leading stages (2.20° RMS); the angle encoder corrects this to 0.094° for 136 µm² | Sec. III-A | `RTL/rope_angle_encoder.v`, `VERIFY/encoder_design.py`, `VERIFY/table1_regen.py`, `SCRIPTS/gen/run_05_*`, `run_06_*` |
+| Fixed-point RoPE saturates on real activations, so block floating point (BFP) is required; blocks of 8 pairs beat blocks of 64 | Sec. III-B | `RTL/rope_bfp_norm.v`, `VERIFY/block_granularity.py`, `KAGGLE/rope_hw.py`, `SCRIPTS/gen/run_07..09_*`, `run_16_*`, `run_17_*` |
+| Required precision follows the rotary base, not model size (`F=11` recommended; LLaMA-2-7B stays within 0.32% at `F=8`) | Sec. IV-A, Table II | `KAGGLE/eval_perplexity.py`, `KAGGLE/validate_hw.py` |
+| Area, power and energy against standard CORDIC, a sin/cos LUT and a multiplier at `W=12` and `W=14` | Sec. IV-B, Table III | `SCRIPTS/gen/run_10..15_*`, `SCRIPTS/collect_results.py`, `RUN/` |
 
 ## Layout
 
 ```
 RTL/          synthesisable Verilog: binary UD core, merged radix-4 UD core,
               standard CORDIC, sin/cos LUT and multiplier baselines,
-              angle encoder, range reduction, BFP normalisation, gain compensation
+              angle encoder with range reduction, BFP normalisation,
+              gain compensation
 CONSTRAINTS/  SDC: 2.0 ns (500 MHz), input/output delays, load
-SCRIPTS/      Genus TCL, one per design, plus run_all_synth.sh and the
-              report collector that produces the CSV behind tab:perf
-RUN/          synthesis reports as produced by Genus, per design and per width
-              (see "Coverage of RUN/" below -- this is the earlier campaign)
-VERIFY/       Python models and Verilog testbenches; golden vectors;
-              table1_regen.py regenerates the angle-error table
-KAGGLE/       perplexity evaluation on WikiText-2 against a bit-accurate
-              fixed-point RoPE model
-PAPER/        LaTeX source (iscas2027_main.tex is the submission)
+SCRIPTS/      Genus TCL, run_all_synth.sh, and collect_results.py, which
+              gathers area, slack and power into one CSV
+SCRIPTS/gen/  the 17 generated synthesis runs (top-level wrapper + TCL each)
+RUN/          Genus reports per design and word length
+VERIFY/       Python models, Verilog testbenches and golden vectors
+KAGGLE/       perplexity evaluation on WikiText-2 with a bit-accurate model
+              of the synthesised datapath
+PAPER/        LaTeX source
 ```
+
+## Synthesis runs
+
+| Runs | Design |
+|---|---|
+| 1-4 | Gain compensation H1 / H2 for the merged UD datapath, `W=12` and `W=14` |
+| 5-6 | Angle encoder and range reduction |
+| 7-9 | BFP normaliser (`D=64`, `W=12` and `W=14`) and denormaliser |
+| 10-11 | Multiplier and sin/cos LUT baselines, `W=12` |
+| 12-13 | Standard CORDIC, `W=12` and `W=14` |
+| 14-15 | Binary UD rotator, `W=12` and `W=14` |
+| 16-17 | BFP normaliser, finer block sizes, `W=14` |
+
+`RUN/` holds Genus reports from an earlier sweep: the merged UD datapath at
+`W=6..14`, and the multiplier, sin/cos LUT, standard CORDIC and Binary UD
+designs at several word lengths. Where they overlap the paper they agree
+with it: for example `mult_rope/W=14` gives 4184.712 µm² (paper: 4185),
+`sin_cos_rope/W=14` gives 5375.214 µm² (5375) and `csd_ud/14` gives
+3466.512 µm² (3467, uncompensated row of Table I). The remaining Table III
+rows are produced by runs 10-15 above.
 
 ## Reproducing
 
-**Synthesis** (needs Cadence Genus and a `gsclib045` installation):
+**Synthesis** (Cadence Genus and a GPDK045 `gsclib045` installation):
 
 ```bash
 ./SCRIPTS/run_all_synth.sh          # all 17 runs
-./SCRIPTS/run_all_synth.sh 1 2      # the two critical-path runs only
-python3 SCRIPTS/collect_results.py  # areas, slack and power into one CSV
+./SCRIPTS/run_all_synth.sh 14 15    # selected runs only, e.g. the Binary UD rotator
+python3 SCRIPTS/collect_results.py  # area, slack and power into one CSV
 ```
 
-Runs are ordered in `SYNTHESIS_RUN_LIST.md`; runs 1, 2, 10 and 11 are the ones the
-headline table depends on.
-
-**Numerical verification** (Python 3.11+, numpy; Icarus or Xcelium for the testbenches):
+**Numerical verification** (Python 3.11+, numpy; Icarus or Xcelium for the
+testbenches):
 
 ```bash
 ./VERIFY/run_all.sh
 python3 VERIFY/table1_regen.py
 ```
 
-**Perplexity** — see `KAGGLE/KAGGLE_INSTRUCTIONS.md`. Needs `transformers` 5.17.0 and
-`torch` 2.10.0, a GPU, and a Hugging Face token supplied through the environment
-(never committed; on Kaggle it comes from *Add-ons → Secrets* as `HF_TOKEN`).
+**Perplexity**: see `KAGGLE/KAGGLE_INSTRUCTIONS.md`. Needs `transformers`
+5.17.0 and `torch` 2.10.0, a GPU, and a Hugging Face token supplied through
+the environment (on Kaggle: *Add-ons → Secrets* as `HF_TOKEN`).
 
-## Tool and library versions
+## Tools and library
 
 - Cadence Genus 21.10-p002
-- Cadence GPDK045, `gsclib045` with the hvt/lvt kits
-- Corner `fast_vdd1v2` at PVT_1P32V_0C (1.32 V, 0 °C), which is optimistic relative
-  to nominal; every design in the comparison is synthesised at the same corner
+- Cadence GPDK045, `gsclib045` with the hvt/lvt cells
+- Corner `fast_vdd1v2` (1.32 V, 0 °C); every design and baseline uses the
+  same corner
 - 2.0 ns clock period (500 MHz)
 
-## Coverage of `RUN/`
+## Not included
 
-`RUN/` holds the **earlier synthesis campaign**: the merged UD datapath swept over
-`W=6..14`, and the multiplier, sin/cos LUT and standard CORDIC baselines at a
-subset of widths. Where it overlaps the paper it agrees exactly, for instance
-`mult_rope/W=14` at 4184.712 um^2 against the 4185 reported, `sin_cos_rope/W=14` at
-5375.214 against 5375, and `csd_ud/14` at 3466.512 against the 3467 uncompensated
-row of `tab:gaincomp`.
+Genus design databases (`*.db`), formal-verification maps and mapped
+netlists are not included. They embed characterised GPDK045 library data,
+which is licensed and cannot be redistributed. The text reports carry every
+quantity used in the paper: cell area, slack, power and gate counts. Report
+headers keep the original working directory of the synthesis machine,
+unedited.
 
-It does **not** yet contain the later campaign of 17 runs: the Binary UD rotator at
-`W=12` and `W=14`, the H1/H2 gain-compensation runs, and the BFP block-granularity
-sweep. Those reports are being added; until then the parts of `tab:perf` that rest
-on them are not reproducible from this repository alone.
+## Citation
 
-## A note on what is not here
-
-Genus design databases (`*.db`), formal-verification maps and mapped netlists are
-excluded. They are proprietary-format binaries that embed characterised standard-cell
-library data from GPDK045, so they are not ours to redistribute, and they are
-unreadable without a Genus licence. The human-readable reports under `RUN/` carry
-every quantity the paper reports: cell area, slack, power and the gate census.
-
-Report headers contain the absolute working directory of the lab machine the runs
-were performed on. They are left intact so the reports stand as unedited tool output.
+```bibtex
+@inproceedings{deore2027udrope,
+  author    = {Deore, Siddhant and Shetty, Pratham and Rao, Madhav},
+  title     = {A Uniformly Distributed {CORDIC} {RoPE} Accelerator for Large Language Models},
+  booktitle = {Proc. IEEE International Symposium on Circuits and Systems (ISCAS)},
+  year      = {2027},
+  note      = {Under review}
+}
+```
 
 ## Licence
 
